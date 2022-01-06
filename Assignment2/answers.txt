@@ -1,0 +1,7 @@
+1.  So to display the page title along with view count, we need to output <String, Long>. We need to create a new class here similar to LongPairWritable, maybe call it as StringLongPairWritable class and then implement using that class.
+
+2. .map creates a vertical map of the data, whereas .flatMap creates a horizontal map of data(flattened results). A .map function seems to be the MapReduce concept of mapping as it does not create any flattened results.
+
+3. reduce() is implemented as an action(returns a python value of single data) and reduceByKey() is as a transformation(returns a RDD to have further transformations on it like sort). The .reduce() function is more like MapReduce concept of reducing as reducer in Hadoop reduces the data to a value.
+
+4. When there is a tie on the most viewed page count, we can group the pages based on page count(groupBy key) and present the page titles as a list of titles.
