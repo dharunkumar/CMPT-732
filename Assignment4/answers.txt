@@ -1,0 +1,7 @@
+1. Using .cache() in local had a minimal difference in local with reddit-2 dataset(2-3 sec difference). When I tried the same in cluster with reddit-3/reddit-4, I could not see any difference in reddit-3, but in reddit-4 there was a slight difference(5 sec). So this indicates that caching will be pretty useful in scenarios with large datasets, we will be using the data again at some point down in the DAG and reading them again will cause unnecessary cpu cycles.
+
+2. The .cache() method might make the code slower when there are no branching out in the DAG, this means that the cached data might not be used at a later stage, so storing the data in cache is waste use of memory.(In scenarios like joining two datasets, caching might be useful as during join without caching, entire data might be re-read again)
+
+3. When the two datasets that needs to be joined are not of same size, the normal join might make multiple copies of the shorter data to match with the larger dataset, this will be slow and unnecessary. In this case if we use a broadcast join to store the shorter dataset, it will be used by the executors(only one copy of broadcast will be stored in memory and shared across executors) hence it will be faster than normal joins.
+
+4. In case of large datasets(data that might be more size than available memory or 2 datasets with similar size), the broadcast join might not be useful and slower. It ultimately beats the purpose of broadcast joins.
