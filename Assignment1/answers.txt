@@ -1,0 +1,7 @@
+1.  I’m just not familiar with with ToolRunner relationship to mapReduce. Otherwise I’m clear with the WordCount functionality.
+
+2. When I submitted the job with “-D map reduce.job.reduces=3”, the output produced was 3 files from 3 reducers. Incase of large datasets, this will be really helpful to reduce the workload on a single reducer, thereby increasing the efficiency by splitting the load across multiple reducers.
+
+3. “-D map reduce.job.reduces=0” produces the intermediate output given by just the mapper, as we have explicitly specified to use 0 reducers. This can be useful to debug intermediate inputs.
+
+4. There was not much of a difference between running RedditAverage with and without the combiner optimization for the data sets reddit-1, reddit-2, reddit-3. I think this is because combiner is more like a cloned reducer except it produces different output than reducer. So it takes almost similar times to process the job. All these because of I ran it in my local single node setup. But this will have a significant difference in the processing times when run on a multiple node cluster, because the combiner reduces the time taken for data transfer between mapper and reducer by combining data and thus reducing the number of I/O’s.
