@@ -1,0 +1,36 @@
+1. In the reddit averages execution plan, only 'subreddit' and 'score' fields were loaded. The average was computed in three steps, first a partial aggregation within a partition(similar to combiner), next shuffle using hash partitioning, then a final aggregation with the shuffled data from various partitions.
+
+2. The running times for Reddit averages implementations in the five scenarios are:
+MapReduce:
+real	3m36.400s
+user	0m7.448s
+sys	0m0.625s
+
+Spark DataFrames (with CPython):
+real	1m7.834s
+user	0m26.852s
+sys	0m1.940s
+
+Spark RDDs (with CPython):
+real	2m27.227s
+user	0m18.851s
+sys	0m1.509s
+
+Spark DataFrames (with PyPy):
+real	1m8.595s
+user	0m27.906s
+sys	0m1.892s
+
+Spark RDDs (with PyPy):
+real	1m7.584
+user	0m19.350s
+sys	0m1.469s
+
+The PyPy implementation has made the execution times pretty faster(less than halved the time) for RDDs and not much change in Dataframes.
+The Cpython/PyPy implementation for Dataframes uses memory representation as JVM/Scala objects that is common for both Python and JVM. This is why there is not much difference in execution times in Dataframe implementations. But in case of RDDs, it is represented as python objects, so there always needs to be conversion that is required. This is why we can see a large difference in execution times in case of PyPy implementation vs the normal CPython implementation for RDDs
+
+3. The broadcast join had a major impact in runtimes for pagecount-3 dataset, that reduced the execution time by almost half(Without broadcast: 2m26.717s and With Broadcast: 1m15.657s). The same comparison resulted in nearly 40sec execution time reduction with broadcast join for pagecount-4 dataset when compared to execution time without the broadcast join(Without broadcast: 4m14.431s and With Broadcast: 3m35.800s)
+
+4. The sort algorithm used by both the execution plans were different. With the broadcast hint, it is BroadcastHashJoin and without it, the default used is SortMergeJoin. Broadcast join also removes the hash partitioning step.
+
+5. I preferred writing the “DataFrames + Python methods” style as the code was more flexible, readable and self-explanatory functions/operations. I think once we get used to writing spark Dataframes, it will be even easier than sql syntax.
