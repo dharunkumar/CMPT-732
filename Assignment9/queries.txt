@@ -1,0 +1,56 @@
+--Select count(*) from customers;
+
+--Select count(*) from paymentmethods;
+
+--Select count(*) from amenities;
+
+--Select count(*) from purchases;
+
+--select amenity from amenities group by  amenity;
+
+--select min(pdate), max(pdate) from purchases;
+
+--select mtype from paymentmethods group by mtype;
+
+--select province, count(*) from customers group by province;
+
+--select avg(amount), median(amount) from purchases;
+
+--select * from greater_vancouver_prefixes;
+
+
+--select paymentmethods.mtype, avg(purchases.amount) from purchases inner join customers on purchases.custid = customers.custid
+--inner join paymentmethods on purchases.custid = paymentmethods.custid where customers.province = 'ON'
+--group by paymentmethods.mtype;
+
+--CREATE VIEW vancouver_custs AS
+--(WITH
+--  vprefixes (vp) AS
+--    (SELECT DISTINCT pcprefix FROM greater_vancouver_prefixes)
+--SELECT customers.custid, (case when substring(customers.postalcode,1,3) in (Select vp from vprefixes) then 1 else 0 end) as in_vancouver from customers);
+
+--DROP VIEW vancouver_custs;
+
+--Select * from vancouver_custs;
+
+--SELECT COUNT(*), in_vancouver
+--  FROM vancouver_custs
+--  GROUP BY in_vancouver
+--  ORDER BY in_vancouver;
+
+Select
+(case when customers.province='BC' and vancouver_custs.in_vancouver = 0 then true else false end) as From_BC_non_Van,
+(case when vancouver_custs.in_vancouver = 1 then true else false end) as From_Van, count(purchases.amount) as Count1,
+avg(purchases.amount) as Average,
+median(purchases.amount) as Median
+from purchases
+inner join vancouver_custs on purchases.custid = vancouver_custs.custid
+inner join customers on purchases.custid = customers.custid
+group by From_BC_non_Van, From_Van;
+
+
+
+
+
+
+

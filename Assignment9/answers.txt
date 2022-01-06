@@ -1,0 +1,155 @@
+Question 1
+
+a.
+People from Ontario tend to put larger purchases on one payment method, that is credit cards with average of
+131.40. This can be seen from the average amount of purchases by payment type where the credit card type has
+larger average.
+
+b.
+Query:
+
+SELECT     paymentmethods.mtype, AVG(purchases.amount)
+FROM       purchases
+INNER JOIN customers ON purchases.custid = customers.custid
+INNER JOIN paymentmethods ON purchases.pmid = paymentmethods.pmid
+WHERE      customers.province = 'ON'
+GROUP BY   paymentmethods.mtype;
+
+Results:
+
+mtype   avg
+credit	131.40
+debit	101.06
+
+
+Question 2
+
+a.
+visitors from outside BC altogether spent the most per transaction with an average of 112.89 and median of 33.270
+
+b.
+Query:
+CREATE VIEW vancouver_custs AS
+(WITH
+    vprefixes (vp) AS
+    (SELECT DISTINCT pcprefix FROM greater_vancouver_prefixes)
+ SELECT customers.custid,
+        (CASE WHEN SUBSTRING(customers.postalcode,1,3) IN (SELECT vp FROM vprefixes) THEN 1 ELSE 0 END) AS in_vancouver
+ FROM   customers);
+
+c. 
+Query:
+
+SELECT      (CASE WHEN customers.province='BC' AND vancouver_custs.in_vancouver = 0 THEN true ELSE false END) AS From_BC_non_Van,
+            (CASE WHEN vancouver_custs.in_vancouver = 1 THEN true ELSE false END) AS From_Van,
+            COUNT(purchases.amount) AS "Count",
+            AVG(purchases.amount) AS Average,
+            MEDIAN(purchases.amount) AS Median
+FROM        purchases
+INNER JOIN  vancouver_custs ON purchases.custid = vancouver_custs.custid
+INNER JOIN  customers ON purchases.custid = customers.custid
+GROUP BY    From_BC_non_Van, From_Van
+ORDER BY    Median;
+
+Results:
+from_bc_non_van     from_van    count   average     median
+false	            true	    10384	86.01	    27.370
+true	            false	    3899	95.16	    30.080
+false	            false	    15717	112.89	    33.270
+
+
+Question 3
+
+a.
+Tourists spend more at restaurants that serve sushi with an average of 85.80 than locals(residents of Greater Vancouver)
+
+b.
+Query:
+WITH        sushi (amenid) AS
+(SELECT     amenid
+ FROM       amenities
+ WHERE      amenities.tags.cuisine IS NOT NULL AND
+	        amenities.amenity = 'restaurant' AND
+            amenities.tags.cuisine ILIKE '%sushi%')
+SELECT      AVG(purchases.amount), vancouver_custs.in_vancouver
+FROM        purchases
+INNER JOIN  vancouver_custs ON vancouver_custs.custid = purchases.custid
+INNER JOIN  sushi ON sushi.amenid = purchases.amenid
+GROUP BY    vancouver_custs.in_vancouver
+ORDER BY    vancouver_custs.in_vancouver;
+
+
+Results:
+avg     in_vancouver
+85.80	0
+77.57	1
+
+Question 4
+
+a.
+The average purchase per day for the first five days of August are:
+pdate       avg
+2021-08-01	96.59
+2021-08-02	106.56
+2021-08-03	95.87
+2021-08-04	115.50
+2021-08-05	95.67
+
+b.
+Query:
+SELECT      pdate, AVG(amount)
+FROM        purchases
+WHERE       DATE_PART(mon, pdate) = 8 AND
+	        DATE_PART(d, pdate) < 6
+GROUP BY    pdate
+ORDER BY    pdate;
+
+Results:
+pdate       avg
+2021-08-01	96.59
+2021-08-02	106.56
+2021-08-03	95.87
+2021-08-04	115.50
+2021-08-05	95.67
+
+c.
+The bytes / record ratio for Redshift on the 5-day query is:
+94.06 KB
+4703 rows
+So, the bytes / record ratio is 19.98 bytes/line
+
+d.
+The bytes / record ratio for Spectrum on the 5-day query is:
+267396 bytes
+4703 rows
+So, the bytes / record ratio is 56.85 bytes/line
+But after the spectrum does the filtering and grouping data to average, it returns only
+120 bytes
+5 rows
+
+
+e.
+The averages are 57 bytes/line and 968 lines/day.
+Redshift: It scans the table by filtering out data for 5 days in total, so 5*968 around 4840(exactly 4703
+for first 5 days) rows are read. In that only required columns are read on which the operations needs to be
+performed which accounts for 94060 bytes(94.06 KB) of data read.
+Spectrum: It scans the same amount of rows as redshift from S3(4703 rows), but it reads the entire line of
+the record without filtering out on columns, thus reading about 267396 bytes of data.Later, it groups the
+data per day and averages before returning the data to redshift thereby returning only 120 bytes and 5 rows of
+data
+
+f.
+When the data is cleaned, normalized and pre-processed which can be easily loaded into Redshift for complex
+joins, it can be loaded from S3 into Redshift before querying it. Also, if we want only on part of
+data which makes useful analysis and joins, it might be a good solution to load them in redshift as they use
+a columnar MPP data, which makes it simple to run complex analytic queries with orders of magnitude faster performance for joins and aggregations performed over large datasets
+
+g.
+When the data is unstructured, we may choose to keep the data in Data lake like S3 to query it using spectrum.
+Also, if the data can be worked independently in parallel, we can achieve max parallelism using S3 and
+querying it using spectrum. When the data that needs to be stored can be partitioned based on date, time, or
+any other custom keys enables Redshift Spectrum to dynamically prune non-relevant partitions to minimize the
+amount of data processed. Data in S3 can also be concurrently read by multiple sources. Redshift Spectrum
+elastically scales compute resources separately from the storage layer in Amazon S3. Also, it offers
+significantly higher concurrency because you can run multiple Amazon Redshift clusters and query the same
+data in Amazon S3.
