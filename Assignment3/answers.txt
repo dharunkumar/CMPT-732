@@ -1,0 +1,10 @@
+1. The original wordcount-5 dataset had input files which were of different sizes(large difference in size like 82.25 KB(smallest file) and 259.72 MB(largest file)). This means that the executor which gets the largest file needs more cpu cycles to complete the task whereas the executor with small size input completes the job pretty quickly. So doing a repartition on the data made the input to divide data equally, so that the executors complete the job faster.
+
+2. The same fix does not work on wordcount-3 dataset because if we make the executors equal to the input files count, the overhead of maintaining these data beats the purpose of partitioning, thus taking much time than a non-partitioned one.
+
+3. The input files can be split evenly based on lines in file and thus it becomes a fairly evenly split data, so that there is no disparity in input data for each executor.
+
+4. In my laptop, it has 4 cores, so when I experimented with 8,6,4,2 and no partition, the time was minimal when the partitions were 4. The time difference was minimal though(no partition - 33.23s, 8-20.57s, 6-19.64s, 4-16.14s, 2-18.5s)
+
+5. There seems to be a lot of overhead added by spark, as the single threaded non-spark implementation takes only 1/6th(nearly) of the time taken by spark(spark implementation with python3- nearly 6 mins, non-spark implementation 1.5  mins with PYPY implementation and 40sec with C implementation). This might be due to the parallel computations across executors and the overhead to maintain and process the results.
+The PYPY implementation with spark was fairly better than normal python implementation(spark implementation with python3- nearly 6 mins, pypy implementation nearly 1.5 mins) and it was taking almost similar times to non-spark pypy implementation(ultimately this seems to nullify the overhead of spark)
