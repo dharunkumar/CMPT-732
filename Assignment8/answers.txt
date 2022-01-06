@@ -1,0 +1,53 @@
+1. What happened when you inserted another row with the same primary key as an existing row?
+
+When I inserted another row with same primary key as an existing row, it was upserted(meaning the entire data for that row is replaced with the new data as it already exists otherwise it will be inserted as a new row as per upsert definition)
+
+2. What happened when you query a keyspace with replication factor 1 and one node down? How did it behave with replication factor 2 and a node down?
+
+When I query a keyspace with replication factor 1 and one node was down, an error was thrown:
+"NoHostAvailable: ('Unable to complete the operation against any hosts', {<Host: 10.17.202.217:9042 datacenter1>: Unavailable('Error from server: code=1000 [Unavailable exception] message="Cannot achieve consistency level ONE" info={\'consistency\': \'ONE\', \'required_replicas\': 1, \'alive_replicas\': 0}')})"
+This happens because of replication factor 1, the data is stored in only one node and when that node is down, cassandra cannot query the data from anywhere.
+
+When the replication factor was 2 and a node was down, I was able to query the keyspace without any issues as the data is available in one of the nodes.
+
+3. How did the consistency level affect the results with the node up/down?
+
+With Consistency 1:
+node up: we will be able to insert and read data properly.
+node down: we will be able to insert and read as the consistency is 1 and the data will be written to/read from any one of the available nodes.
+
+With Consistency All:
+node up: we will be able to insert and read data properly.
+node down: we will not be able to insert and read as the consistency is all and one of the nodes will be down. We will get an error as:
+Read error - NoHostAvailable: ('Unable to complete the operation against any hosts', {<Host: 10.17.202.217:9042 datacenter1>: Unavailable('Error from server: code=1000 [Unavailable exception] message="Cannot achieve consistency level ALL" info={\'consistency\': \'ALL\', \'required_replicas\': 2, \'alive_replicas\': 1}')})
+Write error - NoHostAvailable: ('Unable to complete the operation against any hosts', {})
+
+4. Which of the WHERE id=? values returned successfully with CONSISTENCY ALL when one of the nodes was down? Why do you think some could be returned but not others?
+
+The id values of 1,4,5 returned successfully with CONSISTENCY ALL when one of the nodes was down. This might be because of the data for id=3,4 data might be replicated in the unreliable3.local, so that cassandra was not able to achieve CONSISTENCY ALL, thus returning error.
+
+5. What was the CREATE TABLE statement you used for the nasalogs table? What was the primary key you choose, and why?
+
+CREATE TABLE nasalogs (
+  id UUID,
+  host TEXT,
+  datetime TIMESTAMP,
+  path TEXT,
+  bytes INT,
+  PRIMARY KEY(host, id)
+);
+
+PRIMARY KEY is composite of (host, id). Since we are going to group the data based on host, that is chosen as partition key. We are choosing uuid to create a unique identifier for each row of the data. This is why we choose this primary key combination.
+
+6. What was the CQL query you used (or tried) to get the total number of bytes?
+
+select sum(bytes) from nasalogs;
+
+This gave a readtimeout error, as the data needs to be read from multiple nodes in the cluster. If I specify the query like:
+
+Select host, sum(bytes) from nasalogs group by host;
+
+This will run properly as the data for a particular host resides in the same node and groupby makes sure to add the bytes only for those hostnames.
+
+
+
