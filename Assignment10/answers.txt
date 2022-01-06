@@ -1,0 +1,77 @@
+1.
+The slope and intercept for the streaming points with various topics are:
+
++-----------------+------------------+-----------------+------------------+
+|            Topic|           Timeout|            slope|         intercept|
++-----------------+------------------+-----------------+------------------+
+|             xy-1|               200|6.112071493452429|-9.849409261130006|
++-----------------+------------------+-----------------+------------------+
+|            xy-10|               200|6.112169852751987|-9.532630167079816|
++-----------------+------------------+-----------------+------------------+
+|           xy-100|               200|6.112443362125188|-9.602895072537102|
++-----------------+------------------+-----------------+------------------+
+
+2.
+Yes, the streaming program's estimate of the slope and intercept getting better as the program runs. That is the program
+is aggregating all the data from the start of time. This can be inferred from the results that are converging to the
+optimal values(after some iterations, the results does not change much)
+
+3.
+Validation scores:
+Validation score for RGB model: 0.570522
+Validation score for LAB model: 0.692421
+
+4.
+
+Yes indeed, the model seems to have overfit on the training data for tmax-1 dataset as the r2 values are good for train
+data, but bad for testing data. The model seems to perform good on tmax-2 dataset with good r2 values for tmax-1, tmax-2
+datasets.
+
++-----------------------+------------------+-----------------+------------------+
+|          dataset      |        train/test|               r2|              rmse|
++-----------------------+------------------+-----------------+------------------+
+|           tmax-1      |             train|         0.865061|          4.400921|
++-----------------------+------------------+-----------------+------------------+
+|tmax-test(tmax-1 model)|              test|         0.397321|         10.069663|
++-----------------------+------------------+-----------------+------------------+
+|           tmax-2      |             train|         0.832584|          5.274684|
++-----------------------+------------------+-----------------+------------------+
+|tmax-test(tmax-2 model)|              test|         0.811203|          5.635977|
++-----------------------+------------------+-----------------+------------------+
+
+
+5.
+
+Without “yesterday's temperature” feature:
++-----------------------+------------------+-----------------+------------------+
+|          dataset      |        train/test|               r2|              rmse|
++-----------------------+------------------+-----------------+------------------+
+|           tmax-1      |             train|         0.865061|          4.400921|
++-----------------------+------------------+-----------------+------------------+
+|tmax-test(tmax-1 model)|              test|         0.397321|         10.069663|
++-----------------------+------------------+-----------------+------------------+
+|           tmax-2      |             train|         0.832584|          5.274684|
++-----------------------+------------------+-----------------+------------------+
+|tmax-test(tmax-2 model)|              test|         0.811203|          5.635977|
++-----------------------+------------------+-----------------+------------------+
+
+With “yesterday's temperature” feature:
++-----------------------+------------------+-----------------+------------------+
+|          dataset      |        train/test|               r2|              rmse|
++-----------------------+------------------+-----------------+------------------+
+|           tmax-1      |             train|         0.880986|          4.202088|
++-----------------------+------------------+-----------------+------------------+
+|tmax-test(tmax-1 model)|              test|         0.845200|          5.086704|
++-----------------------+------------------+-----------------+------------------+
+|           tmax-2      |             train|         0.916909|          3.751489|
++-----------------------+------------------+-----------------+------------------+
+|tmax-test(tmax-2 model)|              test|         0.912693|          3.820097|
++-----------------------+------------------+-----------------+------------------+
+
+6.
+Without the yesterday's temperature, the feature weightage was distributed among the given features
+(4,[0,1,2,3],[0.335390620846361,0.14050450410290038,0.11350444866282176,0.41060042638791694])
+
+but with yesterday's temperature, the weightage is shifted more towards yesterday's temperature
+(5,[0,1,2,3,4],[0.041043992610862876,0.026363091931797766,0.017368923649496902,0.04842176341126513,0.8668022283965772])
+With yesterday's temperature, it is not predicting "same as yesterday", but almost close(weightage is 0.866802)
